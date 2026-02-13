@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Urlaubsplaner</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #232733;
+  --border: #2e3345;
+  --text: #e1e4ed;
+  --text-muted: #8b90a0;
+  --accent: #6c8cff;
+  --accent-hover: #8ba3ff;
+  --ur: #4caf50;
+  --ur-bg: rgba(76,175,80,.15);
+  --ur-half: #8bc34a;
+  --ur-half-bg: rgba(139,195,74,.15);
+  --sur: #ff9800;
+  --sur-bg: rgba(255,152,0,.15);
+  --uur: #e91e63;
+  --uur-bg: rgba(233,30,99,.15);
+  --holiday: #ffca28;
+  --holiday-bg: rgba(255,202,40,.1);
+  --weekend-bg: rgba(255,255,255,.03);
+  --today-ring: #6c8cff;
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* Login modal */
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-overlay.hidden { display: none; }
+
+.login-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  width: 100%;
+  max-width: 360px;
+  margin: 16px;
+}
+
+.login-box h2 {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.login-field {
+  margin-bottom: 14px;
+}
+
+.login-field label {
+  display: block;
+  font-size: .8rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.login-field input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: .9rem;
+}
+
+.login-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.login-btn {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: background .15s;
+}
+
+.login-btn:hover { background: var(--accent-hover); }
+.login-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.login-error {
+  color: #ef5350;
+  font-size: .8rem;
+  margin-top: 10px;
+  display: none;
+}
+
+.login-error.visible { display: block; }
+
+/* App wrapper (hidden until logged in) */
+.app { display: none; }
+.app.visible { display: block; }
+
+/* Header */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-inner {
+  max-width: 1600px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .8rem;
+  color: var(--text-muted);
+}
+
+.user-info .username {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.logout-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  font-size: .75rem;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.logout-btn:hover { background: var(--border); color: var(--text); }
+
+.year-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.year-nav button {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: background .15s;
+}
+
+.year-nav button:hover { background: var(--border); }
+
+.year-nav span {
+  font-size: 1.1rem;
+  font-weight: 600;
+  min-width: 60px;
+  text-align: center;
+}
+
+/* Quota bar */
+.quota-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quota-section label {
+  font-size: .8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.quota-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 4px 8px;
+  width: 80px;
+  font-size: .9rem;
+  text-align: center;
+}
+
+.quota-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Stats bar */
+.stats-bar {
+  max-width: 1600px;
+  margin: 16px auto;
+  padding: 0 24px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px 20px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.stat-card .stat-label {
+  font-size: .75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 4px;
+}
+
+.stat-card .stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.stat-card .stat-value.ur { color: var(--ur); }
+.stat-card .stat-value.sur { color: var(--sur); }
+.stat-card .stat-value.uur { color: var(--uur); }
+.stat-card .stat-value.rest { color: var(--accent); }
+.stat-card .stat-value.negative { color: #ef5350; }
+
+.stat-bar-track {
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--ur);
+  transition: width .3s ease;
+}
+
+/* Legend */
+.legend {
+  max-width: 1600px;
+  margin: 0 auto 12px;
+  padding: 0 24px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: .8rem;
+  color: var(--text-muted);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.legend-dot.ur { background: var(--ur); }
+.legend-dot.ur-half { background: var(--ur-half); }
+.legend-dot.sur { background: var(--sur); }
+.legend-dot.uur { background: var(--uur); }
+.legend-dot.holiday { background: var(--holiday); }
+.legend-dot.weekend { background: var(--weekend-bg); border: 1px solid var(--border); }
+
+/* Calendar grid */
+.calendar-container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+  overflow-x: auto;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 8px;
+  min-width: 900px;
+}
+
+.month-col {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.month-header {
+  padding: 10px 12px;
+  font-weight: 600;
+  font-size: .85rem;
+  text-align: center;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.month-header .month-sum {
+  font-size: .7rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  background: var(--bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.day-row {
+  display: flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: .78rem;
+  cursor: pointer;
+  transition: background .1s;
+  gap: 4px;
+  min-height: 28px;
+  position: relative;
+  user-select: none;
+}
+
+.day-row:hover { background: rgba(255,255,255,.04); }
+
+.day-row.weekend { background: var(--weekend-bg); }
+.day-row.holiday { background: var(--holiday-bg); }
+.day-row.today { box-shadow: inset 3px 0 0 var(--today-ring); }
+
+.day-num {
+  width: 22px;
+  font-weight: 500;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.day-name {
+  width: 24px;
+  flex-shrink: 0;
+  font-size: .72rem;
+  color: var(--text-muted);
+}
+
+.day-row.weekend .day-name,
+.day-row.weekend .day-num { color: #666e85; }
+
+.day-row.holiday .day-name { color: var(--holiday); }
+
+.day-badge {
+  margin-left: auto;
+  font-size: .65rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.day-badge.ur { background: var(--ur-bg); color: var(--ur); }
+.day-badge.ur-half { background: var(--ur-half-bg); color: var(--ur-half); }
+.day-badge.sur { background: var(--sur-bg); color: var(--sur); }
+.day-badge.uur { background: var(--uur-bg); color: var(--uur); }
+.day-badge.feiertag { background: var(--holiday-bg); color: var(--holiday); font-weight: 400; font-size: .6rem; }
+.day-badge.feiertag-half { background: var(--holiday-bg); color: var(--holiday); font-weight: 400; font-size: .6rem; }
+
+.holiday-name {
+  position: absolute;
+  left: 0;
+  top: -28px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--holiday);
+  font-size: .7rem;
+  padding: 3px 8px;
+  border-radius: var(--radius);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0;
+  transition: opacity .15s;
+}
+
+.day-row:hover .holiday-name { opacity: 1; }
+
+/* Absence selector popover */
+.popover-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+}
+
+.popover-overlay.active { display: block; }
+
+.popover {
+  display: none;
+  position: fixed;
+  z-index: 210;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  padding: 6px;
+  min-width: 180px;
+}
+
+.popover.active { display: block; }
+
+.popover-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: .82rem;
+  transition: background .1s;
+}
+
+.popover-item:hover { background: var(--surface2); }
+
+.popover-item .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.popover-item .dot.ur { background: var(--ur); }
+.popover-item .dot.ur-half { background: var(--ur-half); }
+.popover-item .dot.sur { background: var(--sur); }
+.popover-item .dot.uur { background: var(--uur); }
+.popover-item .dot.remove { background: var(--border); }
+
+.popover-item .label { flex: 1; }
+.popover-item .info { font-size: .7rem; color: var(--text-muted); }
+
+/* Holiday info panel */
+.holiday-panel {
+  max-width: 1600px;
+  margin: 0 auto 16px;
+  padding: 0 24px;
+}
+
+.holiday-panel details {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.holiday-panel summary {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: .85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.holiday-panel summary:hover { color: var(--text); }
+
+.holiday-list {
+  padding: 0 16px 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 4px 16px;
+}
+
+.holiday-list-item {
+  font-size: .78rem;
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+
+.holiday-list-item .hl-date { color: var(--text-muted); }
+.holiday-list-item .hl-name { color: var(--holiday); }
+
+/* State select */
+.state-select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 4px 8px;
+  font-size: .8rem;
+}
+
+.state-select:focus { outline: none; border-color: var(--accent); }
+
+/* Multi-select */
+.day-row.selected {
+  background: rgba(108,140,255,.18);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.day-row.selected.today {
+  box-shadow: inset 3px 0 0 var(--accent), inset -3px 0 0 var(--today-ring);
+}
+
+.day-row.selectable { cursor: pointer; }
+.day-row:not(.selectable) { cursor: default; }
+
+/* Selection action bar */
+.selection-bar {
+  position: fixed;
+  bottom: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 -4px 24px rgba(0,0,0,.5);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 150;
+  transition: bottom .25s ease;
+  flex-wrap: wrap;
+  max-width: calc(100vw - 32px);
+}
+
+.selection-bar.visible { bottom: 24px; }
+
+.selection-bar .sel-count {
+  font-size: .82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  margin-right: 4px;
+}
+
+.selection-bar .sel-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.sel-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: .78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .1s, border-color .1s;
+  white-space: nowrap;
+}
+
+.sel-btn:hover { background: var(--border); }
+
+.sel-btn .sdot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.sel-btn .sdot.ur { background: var(--ur); }
+.sel-btn .sdot.ur-half { background: var(--ur-half); }
+.sel-btn .sdot.sur { background: var(--sur); }
+.sel-btn .sdot.uur { background: var(--uur); }
+.sel-btn .sdot.remove { background: #888; }
+
+.sel-btn-cancel {
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: .78rem;
+  cursor: pointer;
+  transition: background .1s;
+  white-space: nowrap;
+}
+
+.sel-btn-cancel:hover { background: var(--surface2); }
+
+/* Admin button */
+.admin-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  font-size: .75rem;
+  cursor: pointer;
+  transition: background .15s;
+  display: none;
+}
+
+.admin-btn:hover { background: var(--border); color: var(--text); }
+
+/* Import button */
+.import-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  font-size: .75rem;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.import-btn:hover { background: var(--border); color: var(--text); }
+
+/* Modal overlay (reusable) */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 100%;
+  max-width: 600px;
+  margin: 16px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-box h2 {
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius);
+}
+
+.modal-close:hover { background: var(--surface2); color: var(--text); }
+
+/* User table */
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .82rem;
+  margin-bottom: 16px;
+}
+
+.user-table th {
+  text-align: left;
+  padding: 8px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  border-bottom: 1px solid var(--border);
+}
+
+.user-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.user-table .admin-badge {
+  background: var(--accent);
+  color: #fff;
+  font-size: .65rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 4px;
+}
+
+.user-table .actions {
+  display: flex;
+  gap: 4px;
+}
+
+.user-table .actions button {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 3px 8px;
+  border-radius: var(--radius);
+  font-size: .72rem;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.user-table .actions button:hover { background: var(--border); color: var(--text); }
+.user-table .actions button.danger:hover { background: #e91e63; color: #fff; border-color: #e91e63; }
+
+/* Create user form */
+.form-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.form-row input, .form-row select {
+  flex: 1;
+  min-width: 100px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  font-size: .82rem;
+}
+
+.form-row input:focus, .form-row select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.form-row label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.form-row input[type="checkbox"] {
+  flex: none;
+  min-width: unset;
+  width: 16px;
+  height: 16px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-secondary {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  font-size: .82rem;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.btn-secondary:hover { background: var(--border); }
+
+/* Import modal */
+.import-drop {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: .85rem;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+
+.import-drop:hover, .import-drop.dragover {
+  border-color: var(--accent);
+  background: rgba(108,140,255,.05);
+}
+
+.import-drop input[type="file"] {
+  display: none;
+}
+
+.import-preview {
+  margin-top: 16px;
+  font-size: .82rem;
+}
+
+.import-preview .year-entry {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.import-progress {
+  margin-top: 12px;
+  font-size: .8rem;
+  color: var(--text-muted);
+}
+
+.import-progress .bar {
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 2px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.import-progress .bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width .3s ease;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .calendar-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .header { padding: 12px 16px; }
+  .stats-bar, .legend, .calendar-container, .holiday-panel { padding-left: 16px; padding-right: 16px; }
+  .calendar-grid {
+    grid-template-columns: repeat(3, 1fr);
+    min-width: unset;
+  }
+  .stat-card { min-width: 100px; padding: 10px 14px; }
+  .stat-card .stat-value { font-size: 1.2rem; }
+}
+
+@media (max-width: 480px) {
+  .calendar-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .header-inner { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h2>Urlaubsplaner</h2>
+    <form id="loginForm">
+      <div class="login-field">
+        <label for="loginUser">Benutzername</label>
+        <input type="text" id="loginUser" autocomplete="username" required>
+      </div>
+      <div class="login-field">
+        <label for="loginPass">Passwort</label>
+        <input type="password" id="loginPass" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="login-btn" id="loginBtn">Anmelden</button>
+      <div class="login-error" id="loginError"></div>
+    </form>
+  </div>
+</div>
+
+<!-- App (hidden until authenticated) -->
+<div class="app" id="app">
+
+<div class="header">
+  <div class="header-inner">
+    <h1>Urlaubsplaner</h1>
+    <div class="header-controls">
+      <div class="user-info">
+        <span class="username" id="displayName"></span>
+        <button class="import-btn" id="importBtn">ODS Import</button>
+        <button class="admin-btn" id="adminBtn">Benutzer</button>
+        <button class="logout-btn" id="logoutBtn">Abmelden</button>
+      </div>
+      <div class="quota-section">
+        <label for="stateSelect">Bundesland:</label>
+        <select id="stateSelect" class="state-select"></select>
+      </div>
+      <div class="quota-section">
+        <label for="quotaInput">Kontingent (Tage):</label>
+        <input type="number" id="quotaInput" class="quota-input" value="30" min="0" max="99" step="0.5">
+      </div>
+      <div class="year-nav">
+        <button id="prevYear">&#8249;</button>
+        <span id="yearLabel"></span>
+        <button id="nextYear">&#8250;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="stats-bar" id="statsBar"></div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot ur"></div>Urlaub (1 Tag)</div>
+  <div class="legend-item"><div class="legend-dot ur-half"></div>Urlaub (0,5 Tage)</div>
+  <div class="legend-item"><div class="legend-dot sur"></div>Sonderurlaub</div>
+  <div class="legend-item"><div class="legend-dot uur"></div>Unbezahlter Urlaub</div>
+  <div class="legend-item"><div class="legend-dot holiday"></div>Feiertag</div>
+  <div class="legend-item"><div class="legend-dot weekend"></div>Wochenende</div>
+</div>
+
+<div class="holiday-panel" id="holidayPanel"></div>
+
+<div class="calendar-container">
+  <div class="calendar-grid" id="calendarGrid"></div>
+</div>
+
+<div class="selection-bar" id="selectionBar">
+  <span class="sel-count" id="selCount">0 Tage</span>
+  <div class="sel-divider"></div>
+  <button class="sel-btn" data-type="UR"><span class="sdot ur"></span>Urlaub</button>
+  <button class="sel-btn" data-type="UR/2"><span class="sdot ur-half"></span>Halber Tag</button>
+  <button class="sel-btn" data-type="SUR"><span class="sdot sur"></span>Sonderurlaub</button>
+  <button class="sel-btn" data-type="UUR"><span class="sdot uur"></span>Unbezahlt</button>
+  <button class="sel-btn" data-type=""><span class="sdot remove"></span>Entfernen</button>
+  <div class="sel-divider"></div>
+  <button class="sel-btn-cancel" id="selCancel">Abbrechen</button>
+</div>
+
+<!-- Admin Modal -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal-box">
+    <h2>Benutzerverwaltung <button class="modal-close" id="adminClose">&times;</button></h2>
+    <table class="user-table">
+      <thead>
+        <tr><th>Benutzer</th><th>Name</th><th>Bundesland</th><th></th><th>Aktionen</th></tr>
+      </thead>
+      <tbody id="userTableBody"></tbody>
+    </table>
+    <details id="createUserDetails">
+      <summary style="cursor:pointer;font-size:.85rem;color:var(--accent);margin-bottom:8px;">Neuen Benutzer anlegen</summary>
+      <form id="createUserForm">
+        <div class="form-row">
+          <input type="text" id="newUsername" placeholder="Benutzername" required>
+          <input type="text" id="newDisplayName" placeholder="Anzeigename">
+        </div>
+        <div class="form-row">
+          <input type="password" id="newPassword" placeholder="Passwort" required>
+          <select id="newState"></select>
+        </div>
+        <div class="form-row">
+          <label><input type="checkbox" id="newIsAdmin"> Admin</label>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Anlegen</button>
+        </div>
+      </form>
+    </details>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal-box">
+    <h2>ODS importieren <button class="modal-close" id="importClose">&times;</button></h2>
+    <div class="import-drop" id="importDrop">
+      <input type="file" id="importFile" accept=".ods">
+      <p>ODS-Datei hierher ziehen oder klicken</p>
+    </div>
+    <div class="import-preview" id="importPreview" style="display:none"></div>
+    <div class="import-progress" id="importProgress" style="display:none">
+      <span id="importStatus"></span>
+      <div class="bar"><div class="bar-fill" id="importBar" style="width:0%"></div></div>
+    </div>
+    <div class="form-actions" id="importActions" style="display:none">
+      <button class="btn-primary" id="importStart">Importieren</button>
+      <button class="btn-secondary" id="importCancel">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<div class="popover-overlay" id="popoverOverlay"></div>
+<div class="popover" id="popover">
+  <div class="popover-item" data-type="UR">
+    <div class="dot ur"></div>
+    <span class="label">Urlaub</span>
+    <span class="info">1 Tag</span>
+  </div>
+  <div class="popover-item" data-type="UR/2">
+    <div class="dot ur-half"></div>
+    <span class="label">Halber Tag Urlaub</span>
+    <span class="info">0,5 Tage</span>
+  </div>
+  <div class="popover-item" data-type="SUR">
+    <div class="dot sur"></div>
+    <span class="label">Sonderurlaub</span>
+    <span class="info">kein Abzug</span>
+  </div>
+  <div class="popover-item" data-type="UUR">
+    <div class="dot uur"></div>
+    <span class="label">Unbezahlter Urlaub</span>
+    <span class="info">kein Abzug</span>
+  </div>
+  <div class="popover-item" data-type="">
+    <div class="dot remove"></div>
+    <span class="label">Entfernen</span>
+    <span class="info"></span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// ============================================================
+//  German federal state holidays
+// ============================================================
+const STATES = {
+  BW: 'Baden-Württemberg',
+  BY: 'Bayern',
+  BE: 'Berlin',
+  BB: 'Brandenburg',
+  HB: 'Bremen',
+  HH: 'Hamburg',
+  HE: 'Hessen',
+  MV: 'Mecklenburg-Vorpommern',
+  NI: 'Niedersachsen',
+  NW: 'Nordrhein-Westfalen',
+  RP: 'Rheinland-Pfalz',
+  SL: 'Saarland',
+  SN: 'Sachsen',
+  ST: 'Sachsen-Anhalt',
+  SH: 'Schleswig-Holstein',
+  TH: 'Thüringen'
+};
+
+const MONTH_NAMES = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+const DAY_NAMES = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+
+function easterSunday(year) {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month - 1, day);
+}
+
+function addDays(date, n) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+function dateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function getHolidays(year, state) {
+  const easter = easterSunday(year);
+  const holidays = {};
+
+  function add(month, day, name, value) {
+    const d = new Date(year, month - 1, day);
+    holidays[dateKey(d)] = { name, value };
+  }
+  function addFromEaster(offset, name, value) {
+    const d = addDays(easter, offset);
+    holidays[dateKey(d)] = { name, value };
+  }
+
+  add(1, 1, 'Neujahr', 1);
+  addFromEaster(-2, 'Karfreitag', 1);
+  addFromEaster(1, 'Ostermontag', 1);
+  add(5, 1, 'Tag der Arbeit', 1);
+  addFromEaster(39, 'Christi Himmelfahrt', 1);
+  addFromEaster(50, 'Pfingstmontag', 1);
+  add(10, 3, 'Tag der deutschen Einheit', 1);
+  add(12, 25, '1. Weihnachtsfeiertag', 1);
+  add(12, 26, '2. Weihnachtsfeiertag', 1);
+
+  if (['BW','BY','ST'].includes(state)) add(1, 6, 'Heilige Drei Könige', 1);
+  if (['BW','BY','HE','NW','RP','SL'].includes(state)) addFromEaster(60, 'Fronleichnam', 1);
+  if (['BY','SL'].includes(state)) add(8, 15, 'Mariä Himmelfahrt', 1);
+  if (['BB','MV','SN','ST','TH'].includes(state)) add(10, 31, 'Reformationstag', 1);
+  if (['BW','BY','NW','RP','SL'].includes(state)) add(11, 1, 'Allerheiligen', 1);
+  if (['SN'].includes(state)) {
+    const nov23 = new Date(year, 10, 23);
+    const wd = nov23.getDay();
+    const bbDay = new Date(year, 10, 23 - ((wd + 4) % 7));
+    holidays[dateKey(bbDay)] = { name: 'Buß- und Bettag', value: 1 };
+  }
+  if (['TH'].includes(state)) add(9, 20, 'Weltkindertag', 1);
+  if (['BE'].includes(state)) add(3, 8, 'Internationaler Frauentag', 1);
+  if (['HB','HH','NI','SH'].includes(state)) add(10, 31, 'Reformationstag', 1);
+
+  add(12, 24, 'Heiligabend', 1);
+  add(12, 31, 'Silvester', 0.5);
+
+  return holidays;
+}
+
+// ============================================================
+//  App state
+// ============================================================
+let currentYear = new Date().getFullYear();
+let currentState = 'BY';
+let quotas = {};
+let defaultQuota = 30;
+let absences = {};
+let selection = new Set();
+let lastClickedDate = null;
+let currentUser = null; // { username, displayName, state, defaultQuota, isAdmin }
+
+// ============================================================
+//  API helpers
+// ============================================================
+async function api(method, path, body) {
+  const opts = { method, headers: {} };
+  if (body !== undefined) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(path, opts);
+  if (res.status === 401) {
+    showLogin();
+    throw new Error('Nicht angemeldet');
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Fehler');
+  return data;
+}
+
+// ============================================================
+//  Auth & Init
+// ============================================================
+function showLogin() {
+  document.getElementById('loginOverlay').classList.remove('hidden');
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('loginUser').focus();
+}
+
+function showApp() {
+  document.getElementById('loginOverlay').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+}
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+  errEl.classList.remove('visible');
+  btn.disabled = true;
+
+  try {
+    await api('POST', '/api/login', {
+      username: document.getElementById('loginUser').value.trim(),
+      password: document.getElementById('loginPass').value
+    });
+    document.getElementById('loginPass').value = '';
+    await initApp();
+  } catch (err) {
+    errEl.textContent = err.message || 'Anmeldung fehlgeschlagen';
+    errEl.classList.add('visible');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  try { await api('POST', '/api/logout'); } catch(e) {}
+  currentUser = null;
+  showLogin();
+});
+
+async function initApp() {
+  // Load user profile
+  currentUser = await api('GET', '/api/me');
+  currentState = currentUser.state || 'BY';
+  defaultQuota = currentUser.defaultQuota || 30;
+
+  document.getElementById('displayName').textContent = currentUser.displayName || currentUser.username;
+  document.getElementById('adminBtn').style.display = currentUser.isAdmin ? 'inline-block' : 'none';
+
+  // Load quotas
+  quotas = await api('GET', '/api/quotas');
+
+  // Load absences for current year
+  absences = await api('GET', '/api/absences?year=' + currentYear);
+
+  // Setup UI
+  stateSelect.value = currentState;
+  document.getElementById('quotaInput').value = getQuota();
+  showApp();
+  render();
+}
+
+async function loadYearData() {
+  absences = await api('GET', '/api/absences?year=' + currentYear);
+  render();
+}
+
+// ============================================================
+//  Persistence helpers (API)
+// ============================================================
+function getQuota() {
+  return quotas[String(currentYear)] ?? defaultQuota;
+}
+
+async function saveAbsences(dates) {
+  // dates: { "YYYY-MM-DD": "UR", ... }
+  await api('PUT', '/api/absences', { dates });
+}
+
+async function deleteAbsences(dateList) {
+  // dateList: ["YYYY-MM-DD", ...]
+  await api('DELETE', '/api/absences', { dates: dateList });
+}
+
+async function saveQuota(year, quota) {
+  quotas[String(year)] = quota;
+  await api('PUT', '/api/quotas/' + year, { quota });
+}
+
+async function saveSettings(settings) {
+  await api('PUT', '/api/settings', settings);
+}
+
+// ============================================================
+//  Rendering
+// ============================================================
+function daysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function absenceValue(type) {
+  if (type === 'UR') return 1;
+  if (type === 'UR/2') return 0.5;
+  return 0;
+}
+
+function absenceLabel(type) {
+  switch(type) {
+    case 'UR': return 'UR';
+    case 'UR/2': return '½';
+    case 'SUR': return 'SUR';
+    case 'UUR': return 'UUR';
+    default: return '';
+  }
+}
+
+function absenceClass(type) {
+  switch(type) {
+    case 'UR': return 'ur';
+    case 'UR/2': return 'ur-half';
+    case 'SUR': return 'sur';
+    case 'UUR': return 'uur';
+    default: return '';
+  }
+}
+
+function formatNum(n) {
+  return n % 1 === 0 ? String(n) : n.toFixed(1).replace('.', ',');
+}
+
+function render() {
+  const holidays = getHolidays(currentYear, currentState);
+  const today = dateKey(new Date());
+  const grid = document.getElementById('calendarGrid');
+  grid.innerHTML = '';
+
+  let totalUR = 0;
+  let totalSUR = 0;
+  let totalUUR = 0;
+  const monthSums = new Array(12).fill(0);
+
+  for (const [key, type] of Object.entries(absences)) {
+    if (key.startsWith(currentYear + '-')) {
+      const month = parseInt(key.split('-')[1], 10) - 1;
+      let val = absenceValue(type);
+      // Half-holidays (e.g. Silvester): vacation only counts half
+      const holiday = holidays[key];
+      if (holiday && holiday.value === 0.5 && (type === 'UR' || type === 'UR/2')) {
+        val = val * 0.5;
+      }
+      if (type === 'UR' || type === 'UR/2') {
+        totalUR += val;
+        monthSums[month] += val;
+      }
+      if (type === 'SUR') totalSUR++;
+      if (type === 'UUR') totalUUR++;
+    }
+  }
+
+  const yearQuota = getQuota();
+  const rest = yearQuota - totalUR;
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Kontingent</div>
+      <div class="stat-value">${formatNum(yearQuota)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Urlaub geplant</div>
+      <div class="stat-value ur">${formatNum(totalUR)}</div>
+      <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${Math.min(totalUR/Math.max(yearQuota,1)*100,100)}%"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Rest</div>
+      <div class="stat-value ${rest < 0 ? 'negative' : 'rest'}">${formatNum(rest)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Sonderurlaub</div>
+      <div class="stat-value sur">${totalSUR}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Unbezahlter Urlaub</div>
+      <div class="stat-value uur">${totalUUR}</div>
+    </div>
+  `;
+
+  const sortedHolidays = Object.entries(holidays)
+    .filter(([k]) => k.startsWith(currentYear + '-'))
+    .sort(([a],[b]) => a.localeCompare(b));
+
+  document.getElementById('holidayPanel').innerHTML = `
+    <details>
+      <summary>Feiertage ${currentYear} &mdash; ${STATES[currentState]} (${sortedHolidays.length})</summary>
+      <div class="holiday-list">
+        ${sortedHolidays.map(([k, h]) => {
+          const parts = k.split('-');
+          const dStr = `${parts[2]}.${parts[1]}.${parts[0]}`;
+          const dayOfWeek = DAY_NAMES[new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2])).getDay()];
+          return `<div class="holiday-list-item"><span class="hl-name">${h.name}${h.value === 0.5 ? ' (½)' : ''}</span><span class="hl-date">${dayOfWeek}, ${dStr}</span></div>`;
+        }).join('')}
+      </div>
+    </details>
+  `;
+
+  for (let m = 0; m < 12; m++) {
+    const col = document.createElement('div');
+    col.className = 'month-col';
+
+    const header = document.createElement('div');
+    header.className = 'month-header';
+    header.innerHTML = `<span>${MONTH_NAMES[m]}</span>${monthSums[m] > 0 ? `<span class="month-sum">${formatNum(monthSums[m])} T</span>` : ''}`;
+    col.appendChild(header);
+
+    const days = daysInMonth(currentYear, m);
+    for (let d = 1; d <= days; d++) {
+      const date = new Date(currentYear, m, d);
+      const dow = date.getDay();
+      const key = dateKey(date);
+      const isWeekend = dow === 0 || dow === 6;
+      const holiday = holidays[key];
+      const absence = absences[key];
+      const isToday = key === today;
+
+      const row = document.createElement('div');
+      row.className = 'day-row';
+      if (isWeekend) row.classList.add('weekend');
+      if (holiday) row.classList.add('holiday');
+      if (isToday) row.classList.add('today');
+      row.dataset.date = key;
+
+      let badges = '';
+      if (holiday) {
+        const cls = holiday.value === 0.5 ? 'feiertag-half' : 'feiertag';
+        badges += `<span class="day-badge ${cls}">${holiday.value === 0.5 ? '½ FT' : 'FT'}</span>`;
+        badges += `<span class="holiday-name">${holiday.name}</span>`;
+      }
+      if (absence) {
+        badges += `<span class="day-badge ${absenceClass(absence)}">${absenceLabel(absence)}</span>`;
+      }
+
+      const selectable = !isWeekend && !(holiday && holiday.value === 1);
+      if (selectable) row.classList.add('selectable');
+      if (selection.has(key)) row.classList.add('selected');
+
+      row.innerHTML = `<span class="day-num">${d}</span><span class="day-name">${DAY_NAMES[dow]}</span>${badges}`;
+
+      if (selectable) {
+        row.addEventListener('click', (e) => handleDayClick(e, key));
+      }
+
+      col.appendChild(row);
+    }
+
+    grid.appendChild(col);
+  }
+
+  document.getElementById('yearLabel').textContent = currentYear;
+  document.getElementById('quotaInput').value = getQuota();
+  updateSelectionBar();
+}
+
+// ============================================================
+//  Selection logic
+// ============================================================
+function getSelectableDates() {
+  const holidays = getHolidays(currentYear, currentState);
+  const dates = [];
+  for (let m = 0; m < 12; m++) {
+    const days = daysInMonth(currentYear, m);
+    for (let d = 1; d <= days; d++) {
+      const dt = new Date(currentYear, m, d);
+      const dow = dt.getDay();
+      const key = dateKey(dt);
+      const holiday = holidays[key];
+      const isWeekend = dow === 0 || dow === 6;
+      if (!isWeekend && !(holiday && holiday.value === 1)) {
+        dates.push(key);
+      }
+    }
+  }
+  return dates;
+}
+
+function handleDayClick(e, key) {
+  e.stopPropagation();
+
+  if (e.shiftKey) {
+    if (lastClickedDate && lastClickedDate !== key) {
+      const dates = getSelectableDates();
+      const idxA = dates.indexOf(lastClickedDate);
+      const idxB = dates.indexOf(key);
+      if (idxA !== -1 && idxB !== -1) {
+        const start = Math.min(idxA, idxB);
+        const end = Math.max(idxA, idxB);
+        for (let i = start; i <= end; i++) {
+          selection.add(dates[i]);
+        }
+      }
+    } else {
+      selection.add(key);
+    }
+    lastClickedDate = key;
+    render();
+    return;
+  }
+
+  if (selection.size > 0) {
+    if (selection.has(key)) {
+      selection.delete(key);
+    } else {
+      selection.add(key);
+    }
+    lastClickedDate = key;
+    render();
+    return;
+  }
+
+  lastClickedDate = key;
+  openPopover(e, key);
+}
+
+function clearSelection() {
+  selection.clear();
+  lastClickedDate = null;
+  updateSelectionBar();
+  render();
+}
+
+async function applyToSelection(type) {
+  const toSet = {};
+  const toDelete = [];
+  for (const key of selection) {
+    if (type) {
+      toSet[key] = type;
+      absences[key] = type;
+    } else {
+      toDelete.push(key);
+      delete absences[key];
+    }
+  }
+  selection.clear();
+  lastClickedDate = null;
+  render();
+
+  // Persist to server
+  if (Object.keys(toSet).length > 0) await saveAbsences(toSet);
+  if (toDelete.length > 0) await deleteAbsences(toDelete);
+}
+
+function updateSelectionBar() {
+  const bar = document.getElementById('selectionBar');
+  const count = document.getElementById('selCount');
+  if (selection.size > 0) {
+    count.textContent = `${selection.size} ${selection.size === 1 ? 'Tag' : 'Tage'}`;
+    bar.classList.add('visible');
+  } else {
+    bar.classList.remove('visible');
+  }
+}
+
+// ============================================================
+//  Popover (single-day quick edit)
+// ============================================================
+let popoverTarget = null;
+
+function openPopover(e, key) {
+  popoverTarget = key;
+  const popover = document.getElementById('popover');
+  const overlay = document.getElementById('popoverOverlay');
+
+  const rect = e.currentTarget.getBoundingClientRect();
+  let left = rect.right + 8;
+  let top = rect.top;
+  if (left + 200 > window.innerWidth) left = rect.left - 200;
+  if (top + 220 > window.innerHeight) top = window.innerHeight - 230;
+
+  popover.style.left = left + 'px';
+  popover.style.top = top + 'px';
+  popover.classList.add('active');
+  overlay.classList.add('active');
+
+  popover.querySelectorAll('.popover-item').forEach(item => {
+    const type = item.dataset.type;
+    const current = absences[key] || '';
+    item.style.background = type === current ? 'var(--surface2)' : '';
+  });
+}
+
+function closePopover() {
+  document.getElementById('popover').classList.remove('active');
+  document.getElementById('popoverOverlay').classList.remove('active');
+  popoverTarget = null;
+}
+
+document.getElementById('popoverOverlay').addEventListener('click', closePopover);
+
+document.querySelectorAll('.popover-item').forEach(item => {
+  item.addEventListener('click', async () => {
+    if (!popoverTarget) return;
+    const key = popoverTarget;
+    const type = item.dataset.type;
+
+    // Update local state immediately
+    if (type) {
+      absences[key] = type;
+    } else {
+      delete absences[key];
+    }
+    closePopover();
+    render();
+
+    // Persist to server
+    if (type) {
+      await saveAbsences({ [key]: type });
+    } else {
+      await deleteAbsences([key]);
+    }
+  });
+});
+
+// Selection bar buttons
+document.querySelectorAll('.sel-btn[data-type]').forEach(btn => {
+  btn.addEventListener('click', () => applyToSelection(btn.dataset.type));
+});
+document.getElementById('selCancel').addEventListener('click', clearSelection);
+
+// Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (selection.size > 0) { clearSelection(); e.preventDefault(); }
+    else if (popoverTarget) { closePopover(); e.preventDefault(); }
+  }
+});
+
+// ============================================================
+//  Controls
+// ============================================================
+document.getElementById('prevYear').addEventListener('click', async () => {
+  currentYear--;
+  await loadYearData();
+});
+
+document.getElementById('nextYear').addEventListener('click', async () => {
+  currentYear++;
+  await loadYearData();
+});
+
+document.getElementById('quotaInput').addEventListener('change', async (e) => {
+  const val = parseFloat(e.target.value) || 0;
+  await saveQuota(currentYear, val);
+  render();
+});
+
+// State select
+const stateSelect = document.getElementById('stateSelect');
+Object.entries(STATES).forEach(([code, name]) => {
+  const opt = document.createElement('option');
+  opt.value = code;
+  opt.textContent = name;
+  stateSelect.appendChild(opt);
+});
+
+stateSelect.addEventListener('change', async (e) => {
+  currentState = e.target.value;
+  await saveSettings({ state: currentState });
+  render();
+});
+
+// ============================================================
+//  Admin UI
+// ============================================================
+const adminModal = document.getElementById('adminModal');
+const adminBtn = document.getElementById('adminBtn');
+
+adminBtn.addEventListener('click', () => openAdminModal());
+document.getElementById('adminClose').addEventListener('click', () => adminModal.classList.remove('active'));
+adminModal.addEventListener('click', (e) => { if (e.target === adminModal) adminModal.classList.remove('active'); });
+
+// Populate state select in create user form
+const newStateSelect = document.getElementById('newState');
+Object.entries(STATES).forEach(([code, name]) => {
+  const opt = document.createElement('option');
+  opt.value = code;
+  opt.textContent = name;
+  if (code === 'BY') opt.selected = true;
+  newStateSelect.appendChild(opt);
+});
+
+async function openAdminModal() {
+  adminModal.classList.add('active');
+  try {
+    const users = await api('GET', '/api/admin/users');
+    renderUserTable(users);
+  } catch (e) {
+    document.getElementById('userTableBody').innerHTML =
+      '<tr><td colspan="5" style="color:#ef5350">Fehler beim Laden</td></tr>';
+  }
+}
+
+function renderUserTable(users) {
+  const tbody = document.getElementById('userTableBody');
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td>${esc(u.username)}</td>
+      <td>${esc(u.displayName)}</td>
+      <td>${esc(u.state)}</td>
+      <td>${u.isAdmin ? '<span class="admin-badge">Admin</span>' : ''}</td>
+      <td class="actions">
+        <button onclick="resetUserPassword(${u.id})">Passwort</button>
+        <button class="danger" onclick="deleteUser(${u.id}, '${esc(u.username)}')">Löschen</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+async function deleteUser(id, username) {
+  if (!confirm(`Benutzer "${username}" wirklich löschen? Alle Daten gehen verloren.`)) return;
+  try {
+    await api('DELETE', '/api/admin/users/' + id);
+    openAdminModal(); // refresh
+  } catch (e) {
+    alert('Fehler: ' + e.message);
+  }
+}
+
+async function resetUserPassword(id) {
+  const pw = prompt('Neues Passwort:');
+  if (!pw) return;
+  try {
+    await api('PUT', '/api/admin/users/' + id + '/password', { password: pw });
+    alert('Passwort geändert');
+  } catch (e) {
+    alert('Fehler: ' + e.message);
+  }
+}
+
+document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  try {
+    await api('POST', '/api/admin/users', {
+      username: document.getElementById('newUsername').value.trim(),
+      password: document.getElementById('newPassword').value,
+      displayName: document.getElementById('newDisplayName').value.trim(),
+      state: document.getElementById('newState').value,
+      isAdmin: document.getElementById('newIsAdmin').checked,
+    });
+    document.getElementById('newUsername').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('newDisplayName').value = '';
+    document.getElementById('newIsAdmin').checked = false;
+    document.getElementById('createUserDetails').removeAttribute('open');
+    openAdminModal(); // refresh
+  } catch (e) {
+    alert('Fehler: ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ============================================================
+//  ODS Import
+// ============================================================
+const importModal = document.getElementById('importModal');
+const importDrop = document.getElementById('importDrop');
+const importFile = document.getElementById('importFile');
+let parsedImport = null;
+
+document.getElementById('importBtn').addEventListener('click', () => {
+  parsedImport = null;
+  document.getElementById('importPreview').style.display = 'none';
+  document.getElementById('importActions').style.display = 'none';
+  document.getElementById('importProgress').style.display = 'none';
+  importDrop.querySelector('p').textContent = 'ODS-Datei hierher ziehen oder klicken';
+  importFile.value = '';
+  importModal.classList.add('active');
+});
+
+document.getElementById('importClose').addEventListener('click', () => importModal.classList.remove('active'));
+importModal.addEventListener('click', (e) => { if (e.target === importModal) importModal.classList.remove('active'); });
+document.getElementById('importCancel').addEventListener('click', () => importModal.classList.remove('active'));
+
+importDrop.addEventListener('click', () => importFile.click());
+importDrop.addEventListener('dragover', (e) => { e.preventDefault(); importDrop.classList.add('dragover'); });
+importDrop.addEventListener('dragleave', () => importDrop.classList.remove('dragover'));
+importDrop.addEventListener('drop', (e) => {
+  e.preventDefault();
+  importDrop.classList.remove('dragover');
+  if (e.dataTransfer.files.length > 0) handleOdsFile(e.dataTransfer.files[0]);
+});
+importFile.addEventListener('change', () => {
+  if (importFile.files.length > 0) handleOdsFile(importFile.files[0]);
+});
+
+async function handleOdsFile(file) {
+  if (!file.name.endsWith('.ods')) {
+    alert('Bitte eine .ods-Datei auswählen');
+    return;
+  }
+  importDrop.querySelector('p').textContent = file.name;
+
+  try {
+    const zip = await JSZip.loadAsync(file);
+    const contentXml = await zip.file('content.xml').async('string');
+    parsedImport = parseOdsContent(contentXml);
+    showImportPreview();
+  } catch (e) {
+    alert('Fehler beim Lesen der Datei: ' + e.message);
+  }
+}
+
+function parseOdsContent(xmlStr) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlStr, 'application/xml');
+  const nsTable = 'urn:oasis:names:tc:opendocument:xmlns:table:1.0';
+  const nsText = 'urn:oasis:names:tc:opendocument:xmlns:text:1.0';
+
+  const tables = doc.getElementsByTagNameNS(nsTable, 'table');
+  const result = {}; // { year: { absences: {date: type}, count: N } }
+
+  for (const table of tables) {
+    const name = table.getAttributeNS(nsTable, 'name');
+    const year = parseInt(name, 10);
+    if (isNaN(year) || year < 2000 || year > 2100) continue;
+
+    const absences = {};
+    const holidays = getHolidays(year, currentState);
+
+    // Expand all rows, including covered cells for correct column positions
+    const expandedRows = [];
+    for (const row of table.childNodes) {
+      if (row.nodeType !== 1) continue;
+      const localName = row.localName;
+      if (localName !== 'table-row') continue;
+
+      const rowRepeat = parseInt(row.getAttributeNS(nsTable, 'number-rows-repeated') || '1', 10);
+      const cells = [];
+
+      for (const cell of row.childNodes) {
+        if (cell.nodeType !== 1) continue;
+        const cellLocal = cell.localName;
+        if (cellLocal !== 'table-cell' && cellLocal !== 'covered-table-cell') continue;
+
+        const colRepeat = parseInt(cell.getAttributeNS(nsTable, 'number-columns-repeated') || '1', 10);
+        const textEls = cell.getElementsByTagNameNS(nsText, 'p');
+        const text = textEls.length > 0 ? (textEls[0].textContent || '').trim() : '';
+
+        for (let c = 0; c < Math.min(colRepeat, 60) && cells.length < 60; c++) {
+          cells.push(text);
+        }
+      }
+
+      for (let r = 0; r < Math.min(rowRepeat, 40) && expandedRows.length < 40; r++) {
+        expandedRows.push(cells);
+      }
+    }
+
+    // Structure: Row 0 = header, Rows 1-31 = day data
+    // For month m (0-indexed): day label at col 1+m*2, absence at col 2+m*2
+    // Day label format: "01 Mi", "15 Do", etc.
+    for (let m = 0; m < 12; m++) {
+      const labelCol = 1 + m * 2;
+      const absenceCol = 2 + m * 2;
+
+      for (let ri = 1; ri < expandedRows.length; ri++) {
+        const row = expandedRows[ri];
+        if (!row || row.length <= absenceCol) continue;
+
+        const dayText = row[labelCol] || '';
+        const day = parseInt(dayText, 10);
+        if (isNaN(day) || day < 1 || day > 31) continue;
+
+        const status = (row[absenceCol] || '').trim().toUpperCase();
+        if (!status) continue;
+
+        let type = null;
+        if (status === 'UR' || status === 'U' || status === 'URLAUB') type = 'UR';
+        else if (status === 'UR/2' || status === '½' || status === '0,5' || status === '0.5' || status === 'HT') type = 'UR/2';
+        else if (status === 'SUR' || status === 'SU' || status === 'SONDERURLAUB') type = 'SUR';
+        else if (status === 'UUR' || status === 'UU' || status === 'UNBEZAHLT') type = 'UUR';
+        if (!type) continue;
+
+        const d = new Date(year, m, day);
+        if (d.getMonth() !== m) continue;
+        const key = dateKey(d);
+
+        // Skip weekends and full holidays
+        const dow = d.getDay();
+        if (dow === 0 || dow === 6) continue;
+        if (holidays[key] && holidays[key].value === 1) continue;
+
+        absences[key] = type;
+      }
+    }
+
+    if (Object.keys(absences).length > 0) {
+      result[year] = { absences, count: Object.keys(absences).length };
+    }
+  }
+
+  return result;
+}
+
+function showImportPreview() {
+  const preview = document.getElementById('importPreview');
+  if (!parsedImport || Object.keys(parsedImport).length === 0) {
+    preview.innerHTML = '<p style="color:var(--text-muted)">Keine Abwesenheiten erkannt. Prüfe das Dateiformat.</p>';
+    preview.style.display = 'block';
+    document.getElementById('importActions').style.display = 'none';
+    return;
+  }
+
+  let html = '<p style="margin-bottom:8px;color:var(--text-muted)">Erkannte Daten:</p>';
+  for (const [year, data] of Object.entries(parsedImport).sort()) {
+    // Count by type
+    const counts = {};
+    for (const t of Object.values(data.absences)) {
+      counts[t] = (counts[t] || 0) + 1;
+    }
+    const details = Object.entries(counts).map(([t, n]) => `${t}: ${n}`).join(', ');
+    html += `<div class="year-entry"><span><strong>${year}</strong> &mdash; ${data.count} Einträge</span><span style="color:var(--text-muted);font-size:.75rem">${details}</span></div>`;
+  }
+  preview.innerHTML = html;
+  preview.style.display = 'block';
+  document.getElementById('importActions').style.display = 'flex';
+}
+
+document.getElementById('importStart').addEventListener('click', async () => {
+  if (!parsedImport) return;
+  const startBtn = document.getElementById('importStart');
+  startBtn.disabled = true;
+  const progress = document.getElementById('importProgress');
+  const status = document.getElementById('importStatus');
+  const bar = document.getElementById('importBar');
+  progress.style.display = 'block';
+
+  const years = Object.keys(parsedImport).sort();
+  let done = 0;
+
+  for (const year of years) {
+    status.textContent = `Importiere ${year}...`;
+    bar.style.width = (done / years.length * 100) + '%';
+
+    try {
+      await api('PUT', '/api/absences', { dates: parsedImport[year].absences });
+    } catch (e) {
+      status.textContent = `Fehler bei ${year}: ${e.message}`;
+      startBtn.disabled = false;
+      return;
+    }
+    done++;
+  }
+
+  bar.style.width = '100%';
+  status.textContent = `Import abgeschlossen (${years.length} Jahre)`;
+  document.getElementById('importActions').style.display = 'none';
+
+  // Reload current year data
+  await loadYearData();
+
+  setTimeout(() => importModal.classList.remove('active'), 1500);
+  startBtn.disabled = false;
+});
+
+// ============================================================
+//  Init — check if already logged in
+// ============================================================
+(async () => {
+  try {
+    await initApp();
+  } catch (e) {
+    showLogin();
+  }
+})();
+</script>
+</body>
+</html>
