@@ -1,0 +1,11 @@
+services:
+  urlaubsplaner:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - URLAUBSPLANER_ADMIN_USER=admin
+      - URLAUBSPLANER_ADMIN_PASS=changeme
+    restart: unless-stopped
