@@ -73,12 +73,23 @@ func initDB(path string) {
 			PRIMARY KEY (user_id, date),
 			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 		)`,
+		`CREATE TABLE IF NOT EXISTS teams (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT UNIQUE NOT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
 	}
 
 	for _, m := range migrations {
 		if _, err := db.Exec(m); err != nil {
 			log.Fatalf("Migration failed: %v\n%s", err, m)
 		}
+	}
+
+	// Add team_id column to users (ignore error if column already exists)
+	_, err = db.Exec("ALTER TABLE users ADD COLUMN team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL")
+	if err != nil && !strings.Contains(err.Error(), "duplicate column") {
+		log.Printf("Note: ALTER TABLE users ADD COLUMN team_id: %v", err)
 	}
 
 	// Enable foreign keys
@@ -276,20 +287,28 @@ func handleMe(w http.ResponseWriter, r *http.Request) {
 	var displayName, state string
 	var defaultQuota float64
 	var isAdmin bool
-	err := db.QueryRow("SELECT display_name, state, default_quota, is_admin FROM users WHERE id = ?", s.UserID).
-		Scan(&displayName, &state, &defaultQuota, &isAdmin)
+	var teamID sql.NullInt64
+	var teamName sql.NullString
+	err := db.QueryRow(`SELECT u.display_name, u.state, u.default_quota, u.is_admin, u.team_id, t.name
+		FROM users u LEFT JOIN teams t ON u.team_id = t.id WHERE u.id = ?`, s.UserID).
+		Scan(&displayName, &state, &defaultQuota, &isAdmin, &teamID, &teamName)
 	if err != nil {
 		jsonError(w, 500, "Benutzerdaten nicht gefunden")
 		return
 	}
 
-	jsonResponse(w, 200, map[string]any{
+	resp := map[string]any{
 		"username":     s.Username,
 		"displayName":  displayName,
 		"state":        state,
 		"defaultQuota": defaultQuota,
 		"isAdmin":      isAdmin,
-	})
+	}
+	if teamID.Valid {
+		resp["teamId"] = teamID.Int64
+		resp["teamName"] = teamName.String
+	}
+	jsonResponse(w, 200, resp)
 }
 
 // ============================================================
@@ -482,7 +501,8 @@ func handlePutSettings(w http.ResponseWriter, r *http.Request) {
 // ============================================================
 
 func handleAdminGetUsers(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT id, username, display_name, state, default_quota, is_admin, created_at FROM users ORDER BY id")
+	rows, err := db.Query(`SELECT u.id, u.username, u.display_name, u.state, u.default_quota, u.is_admin, u.created_at, u.team_id, t.name
+		FROM users u LEFT JOIN teams t ON u.team_id = t.id ORDER BY u.id`)
 	if err != nil {
 		jsonError(w, 500, "Datenbankfehler")
 		return
@@ -495,8 +515,10 @@ func handleAdminGetUsers(w http.ResponseWriter, r *http.Request) {
 		var username, displayName, state, createdAt string
 		var defaultQuota float64
 		var isAdmin bool
-		rows.Scan(&id, &username, &displayName, &state, &defaultQuota, &isAdmin, &createdAt)
-		users = append(users, map[string]any{
+		var teamID sql.NullInt64
+		var teamName sql.NullString
+		rows.Scan(&id, &username, &displayName, &state, &defaultQuota, &isAdmin, &createdAt, &teamID, &teamName)
+		u := map[string]any{
 			"id":           id,
 			"username":     username,
 			"displayName":  displayName,
@@ -504,7 +526,12 @@ func handleAdminGetUsers(w http.ResponseWriter, r *http.Request) {
 			"defaultQuota": defaultQuota,
 			"isAdmin":      isAdmin,
 			"createdAt":    createdAt,
-		})
+		}
+		if teamID.Valid {
+			u["teamId"] = teamID.Int64
+			u["teamName"] = teamName.String
+		}
+		users = append(users, u)
 	}
 
 	if users == nil {
@@ -624,6 +651,242 @@ func handleAdminResetPassword(w http.ResponseWriter, r *http.Request) {
 }
 
 // ============================================================
+//  Team Admin Handlers
+// ============================================================
+
+func handleAdminGetTeams(w http.ResponseWriter, r *http.Request) {
+	rows, err := db.Query("SELECT id, name, created_at FROM teams ORDER BY id")
+	if err != nil {
+		jsonError(w, 500, "Datenbankfehler")
+		return
+	}
+	defer rows.Close()
+
+	var teams []map[string]any
+	for rows.Next() {
+		var id int64
+		var name, createdAt string
+		rows.Scan(&id, &name, &createdAt)
+
+		// Fetch members for this team
+		memberRows, err := db.Query("SELECT id, username, display_name FROM users WHERE team_id = ? ORDER BY display_name", id)
+		if err != nil {
+			continue
+		}
+		var members []map[string]any
+		for memberRows.Next() {
+			var uid int64
+			var uname, dname string
+			memberRows.Scan(&uid, &uname, &dname)
+			members = append(members, map[string]any{"id": uid, "username": uname, "displayName": dname})
+		}
+		memberRows.Close()
+		if members == nil {
+			members = []map[string]any{}
+		}
+
+		teams = append(teams, map[string]any{
+			"id":        id,
+			"name":      name,
+			"createdAt": createdAt,
+			"members":   members,
+		})
+	}
+
+	if teams == nil {
+		teams = []map[string]any{}
+	}
+	jsonResponse(w, 200, teams)
+}
+
+func handleAdminCreateTeam(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Name string `json:"name"`
+	}
+	if err := readJSON(r, &req); err != nil {
+		jsonError(w, 400, "Ungültige Anfrage")
+		return
+	}
+
+	req.Name = strings.TrimSpace(req.Name)
+	if req.Name == "" {
+		jsonError(w, 400, "Teamname erforderlich")
+		return
+	}
+
+	res, err := db.Exec("INSERT INTO teams (name) VALUES (?)", req.Name)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE") {
+			jsonError(w, 409, "Teamname bereits vergeben")
+			return
+		}
+		jsonError(w, 500, "Datenbankfehler")
+		return
+	}
+
+	id, _ := res.LastInsertId()
+	jsonResponse(w, 201, map[string]any{"id": id, "name": req.Name})
+}
+
+func handleAdminDeleteTeam(w http.ResponseWriter, r *http.Request) {
+	parts := strings.Split(r.URL.Path, "/")
+	if len(parts) < 4 {
+		jsonError(w, 400, "Team-ID fehlt")
+		return
+	}
+	// Path: /api/admin/teams/{id} or /api/admin/teams/{id}/members
+	idStr := parts[4]
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		jsonError(w, 400, "Ungültige Team-ID")
+		return
+	}
+
+	// Detach all members first
+	db.Exec("UPDATE users SET team_id = NULL WHERE team_id = ?", id)
+	db.Exec("DELETE FROM teams WHERE id = ?", id)
+
+	jsonResponse(w, 200, map[string]any{"ok": true})
+}
+
+func handleAdminSetTeamMembers(w http.ResponseWriter, r *http.Request) {
+	parts := strings.Split(r.URL.Path, "/")
+	// Path: /api/admin/teams/{id}/members
+	if len(parts) < 5 {
+		jsonError(w, 400, "Team-ID fehlt")
+		return
+	}
+	idStr := parts[4]
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		jsonError(w, 400, "Ungültige Team-ID")
+		return
+	}
+
+	// Verify team exists
+	var teamExists int
+	db.QueryRow("SELECT COUNT(*) FROM teams WHERE id = ?", id).Scan(&teamExists)
+	if teamExists == 0 {
+		jsonError(w, 404, "Team nicht gefunden")
+		return
+	}
+
+	var req struct {
+		UserIDs []int64 `json:"userIds"`
+	}
+	if err := readJSON(r, &req); err != nil {
+		jsonError(w, 400, "Ungültige Anfrage")
+		return
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		jsonError(w, 500, "Datenbankfehler")
+		return
+	}
+
+	// Remove all current members from this team
+	tx.Exec("UPDATE users SET team_id = NULL WHERE team_id = ?", id)
+
+	// Assign new members
+	for _, uid := range req.UserIDs {
+		tx.Exec("UPDATE users SET team_id = ? WHERE id = ?", id, uid)
+	}
+
+	tx.Commit()
+	jsonResponse(w, 200, map[string]any{"ok": true})
+}
+
+// ============================================================
+//  Team Calendar Handler
+// ============================================================
+
+func handleGetTeamCalendar(w http.ResponseWriter, r *http.Request) {
+	s := getSession(r)
+
+	// Get the user's team_id
+	var teamID sql.NullInt64
+	var teamName string
+	err := db.QueryRow(`SELECT u.team_id, t.name FROM users u
+		LEFT JOIN teams t ON u.team_id = t.id WHERE u.id = ?`, s.UserID).
+		Scan(&teamID, &teamName)
+	if err != nil || !teamID.Valid {
+		jsonError(w, 404, "Kein Team zugeordnet")
+		return
+	}
+
+	yearStr := r.URL.Query().Get("year")
+	year, err := strconv.Atoi(yearStr)
+	if err != nil || year < 2000 || year > 2100 {
+		jsonError(w, 400, "Ungültiges Jahr")
+		return
+	}
+
+	// Get all team members
+	memberRows, err := db.Query("SELECT id, display_name, state FROM users WHERE team_id = ? ORDER BY display_name", teamID.Int64)
+	if err != nil {
+		jsonError(w, 500, "Datenbankfehler")
+		return
+	}
+	defer memberRows.Close()
+
+	type Member struct {
+		ID          int64             `json:"id"`
+		DisplayName string            `json:"displayName"`
+		State       string            `json:"state"`
+		Absences    map[string]string `json:"absences"`
+	}
+
+	var members []Member
+	var memberIDs []int64
+	for memberRows.Next() {
+		var m Member
+		memberRows.Scan(&m.ID, &m.DisplayName, &m.State)
+		m.Absences = map[string]string{}
+		members = append(members, m)
+		memberIDs = append(memberIDs, m.ID)
+	}
+
+	// Fetch absences for all members for the given year
+	if len(memberIDs) > 0 {
+		placeholders := strings.Repeat("?,", len(memberIDs))
+		placeholders = placeholders[:len(placeholders)-1]
+		args := make([]any, 0, len(memberIDs)+1)
+		for _, id := range memberIDs {
+			args = append(args, id)
+		}
+		args = append(args, yearStr+"-%")
+
+		absRows, err := db.Query(
+			fmt.Sprintf("SELECT user_id, date, type FROM absences WHERE user_id IN (%s) AND date LIKE ?", placeholders),
+			args...)
+		if err == nil {
+			defer absRows.Close()
+			// Build a map for quick lookup
+			memberIdx := map[int64]int{}
+			for i, m := range members {
+				memberIdx[m.ID] = i
+			}
+			for absRows.Next() {
+				var uid int64
+				var date, typ string
+				absRows.Scan(&uid, &date, &typ)
+				if idx, ok := memberIdx[uid]; ok {
+					members[idx].Absences[date] = typ
+				}
+			}
+		}
+	}
+
+	jsonResponse(w, 200, map[string]any{
+		"teamId":   teamID.Int64,
+		"teamName": teamName,
+		"year":     year,
+		"members":  members,
+	})
+}
+
+// ============================================================
 //  Router
 // ============================================================
 
@@ -698,6 +961,38 @@ func main() {
 		}
 		if r.Method == "DELETE" {
 			handleAdminDeleteUser(w, r)
+		} else {
+			jsonError(w, 405, "Method not allowed")
+		}
+	}))
+
+	// Team Admin
+	mux.HandleFunc("/api/admin/teams", requireAdmin(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			handleAdminGetTeams(w, r)
+		case "POST":
+			handleAdminCreateTeam(w, r)
+		default:
+			jsonError(w, 405, "Method not allowed")
+		}
+	}))
+	mux.HandleFunc("/api/admin/teams/", requireAdmin(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/members") && r.Method == "PUT" {
+			handleAdminSetTeamMembers(w, r)
+			return
+		}
+		if r.Method == "DELETE" {
+			handleAdminDeleteTeam(w, r)
+		} else {
+			jsonError(w, 405, "Method not allowed")
+		}
+	}))
+
+	// Team Calendar
+	mux.HandleFunc("/api/team/calendar", requireAuth(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			handleGetTeamCalendar(w, r)
 		} else {
 			jsonError(w, 405, "Method not allowed")
 		}

@@ -925,6 +925,222 @@ body {
   }
   .header-inner { flex-direction: column; align-items: flex-start; }
 }
+
+/* View tabs (personal / team calendar toggle) */
+.view-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  padding: 3px;
+}
+
+.view-tab {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: .8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+
+.view-tab:hover { color: var(--text); }
+.view-tab.active { background: var(--accent); color: #fff; }
+
+/* Admin tabs (users / teams) */
+.admin-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-tab {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 8px 16px;
+  font-size: .85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+
+.admin-tab:hover { color: var(--text); }
+.admin-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.admin-tab-content { display: none; }
+.admin-tab-content.active { display: block; }
+
+/* Team calendar table */
+.team-calendar-wrapper {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+  overflow-x: auto;
+}
+
+.team-table {
+  border-collapse: collapse;
+  font-size: .72rem;
+  white-space: nowrap;
+}
+
+.team-table th, .team-table td {
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  text-align: center;
+  min-width: 36px;
+}
+
+.team-month-header {
+  background: var(--surface2);
+  font-weight: 600;
+  font-size: .78rem;
+  color: var(--text);
+}
+
+.team-member-header {
+  background: var(--surface);
+  font-weight: 500;
+  color: var(--text-muted);
+  font-size: .68rem;
+  max-width: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.team-day-num {
+  background: var(--surface);
+  font-weight: 500;
+  color: var(--text-muted);
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 28px;
+}
+
+.team-cell {
+  background: var(--bg);
+  height: 22px;
+}
+
+.team-cell.weekend { background: var(--weekend-bg); }
+.team-cell.holiday { background: var(--holiday-bg); }
+.team-cell.empty { background: transparent; }
+
+.team-cell .tc-badge {
+  font-size: .6rem;
+  font-weight: 600;
+  padding: 0 3px;
+  border-radius: 3px;
+  line-height: 1.4;
+}
+
+.team-cell .tc-badge.ur { background: var(--ur-bg); color: var(--ur); }
+.team-cell .tc-badge.ur-half { background: var(--ur-half-bg); color: var(--ur-half); }
+.team-cell .tc-badge.sur { background: var(--sur-bg); color: var(--sur); }
+.team-cell .tc-badge.uur { background: var(--uur-bg); color: var(--uur); }
+.team-cell .tc-badge.ft { background: var(--holiday-bg); color: var(--holiday); font-weight: 400; }
+
+.team-summary-row td {
+  background: var(--surface2);
+  font-weight: 600;
+  font-size: .7rem;
+  color: var(--text);
+}
+
+.team-no-members {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px 24px;
+  font-size: .9rem;
+}
+
+/* Team admin cards */
+.team-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.team-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.team-card-name {
+  font-weight: 600;
+  font-size: .9rem;
+}
+
+.team-card-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.team-card-actions button {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 3px 8px;
+  border-radius: var(--radius);
+  font-size: .72rem;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.team-card-actions button:hover { background: var(--border); color: var(--text); }
+.team-card-actions button.danger:hover { background: #e91e63; color: #fff; border-color: #e91e63; }
+
+.team-members-list {
+  font-size: .8rem;
+  color: var(--text-muted);
+}
+
+.team-members-list span {
+  display: inline-block;
+  background: var(--bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 2px 4px 2px 0;
+  font-size: .75rem;
+}
+
+.team-member-edit {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 8px;
+}
+
+.team-member-edit label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  font-size: .8rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.team-member-edit label .team-hint {
+  font-size: .7rem;
+  color: var(--text-muted);
+}
+
+.team-member-edit input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
 </style>
 </head>
 <body>
@@ -954,6 +1170,10 @@ body {
 <div class="header">
   <div class="header-inner">
     <h1>Urlaubsplaner</h1>
+    <div class="view-tabs" id="viewTabs" style="display:none">
+      <button class="view-tab active" data-view="personal">Mein Kalender</button>
+      <button class="view-tab" data-view="team">Teamkalender</button>
+    </div>
     <div class="header-controls">
       <div class="user-info">
         <span class="username" id="displayName"></span>
@@ -1010,32 +1230,52 @@ body {
 <!-- Admin Modal -->
 <div class="modal-overlay" id="adminModal">
   <div class="modal-box">
-    <h2>Benutzerverwaltung <button class="modal-close" id="adminClose">&times;</button></h2>
-    <table class="user-table">
-      <thead>
-        <tr><th>Benutzer</th><th>Name</th><th>Bundesland</th><th></th><th>Aktionen</th></tr>
-      </thead>
-      <tbody id="userTableBody"></tbody>
-    </table>
-    <details id="createUserDetails">
-      <summary style="cursor:pointer;font-size:.85rem;color:var(--accent);margin-bottom:8px;">Neuen Benutzer anlegen</summary>
-      <form id="createUserForm">
-        <div class="form-row">
-          <input type="text" id="newUsername" placeholder="Benutzername" required>
-          <input type="text" id="newDisplayName" placeholder="Anzeigename">
-        </div>
-        <div class="form-row">
-          <input type="password" id="newPassword" placeholder="Passwort" required>
-          <select id="newState"></select>
-        </div>
-        <div class="form-row">
-          <label><input type="checkbox" id="newIsAdmin"> Admin</label>
-        </div>
-        <div class="form-actions">
-          <button type="submit" class="btn-primary">Anlegen</button>
-        </div>
-      </form>
-    </details>
+    <h2>Verwaltung <button class="modal-close" id="adminClose">&times;</button></h2>
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="users">Benutzer</button>
+      <button class="admin-tab" data-tab="teams">Teams</button>
+    </div>
+    <div class="admin-tab-content active" id="adminTabUsers">
+      <table class="user-table">
+        <thead>
+          <tr><th>Benutzer</th><th>Name</th><th>Bundesland</th><th></th><th>Aktionen</th></tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+      <details id="createUserDetails">
+        <summary style="cursor:pointer;font-size:.85rem;color:var(--accent);margin-bottom:8px;">Neuen Benutzer anlegen</summary>
+        <form id="createUserForm">
+          <div class="form-row">
+            <input type="text" id="newUsername" placeholder="Benutzername" required>
+            <input type="text" id="newDisplayName" placeholder="Anzeigename">
+          </div>
+          <div class="form-row">
+            <input type="password" id="newPassword" placeholder="Passwort" required>
+            <select id="newState"></select>
+          </div>
+          <div class="form-row">
+            <label><input type="checkbox" id="newIsAdmin"> Admin</label>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Anlegen</button>
+          </div>
+        </form>
+      </details>
+    </div>
+    <div class="admin-tab-content" id="adminTabTeams">
+      <div id="teamsContainer"></div>
+      <details id="createTeamDetails">
+        <summary style="cursor:pointer;font-size:.85rem;color:var(--accent);margin-bottom:8px;">Neues Team anlegen</summary>
+        <form id="createTeamForm">
+          <div class="form-row">
+            <input type="text" id="newTeamName" placeholder="Teamname" required>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Anlegen</button>
+          </div>
+        </form>
+      </details>
+    </div>
   </div>
 </div>
 
@@ -1199,7 +1439,9 @@ let defaultQuota = 30;
 let absences = {};
 let selection = new Set();
 let lastClickedDate = null;
-let currentUser = null; // { username, displayName, state, defaultQuota, isAdmin }
+let currentUser = null; // { username, displayName, state, defaultQuota, isAdmin, teamId?, teamName? }
+let currentView = 'personal'; // 'personal' or 'team'
+let teamData = null;
 
 // ============================================================
 //  API helpers
@@ -1271,6 +1513,15 @@ async function initApp() {
   document.getElementById('displayName').textContent = currentUser.displayName || currentUser.username;
   document.getElementById('adminBtn').style.display = currentUser.isAdmin ? 'inline-block' : 'none';
 
+  // Show view tabs if user has a team
+  const viewTabs = document.getElementById('viewTabs');
+  if (currentUser.teamId) {
+    viewTabs.style.display = 'flex';
+  } else {
+    viewTabs.style.display = 'none';
+    currentView = 'personal';
+  }
+
   // Load quotas
   quotas = await api('GET', '/api/quotas');
 
@@ -1285,8 +1536,12 @@ async function initApp() {
 }
 
 async function loadYearData() {
-  absences = await api('GET', '/api/absences?year=' + currentYear);
-  render();
+  if (currentView === 'team') {
+    await loadTeamCalendar();
+  } else {
+    absences = await api('GET', '/api/absences?year=' + currentYear);
+    render();
+  }
 }
 
 // ============================================================
@@ -1353,6 +1608,22 @@ function formatNum(n) {
 }
 
 function render() {
+  if (currentView === 'team') {
+    renderTeamCalendar();
+    return;
+  }
+  // Show personal calendar UI elements
+  document.getElementById('statsBar').style.display = '';
+  document.querySelector('.legend').style.display = '';
+  document.getElementById('holidayPanel').style.display = '';
+  document.querySelector('.calendar-container').style.display = '';
+  // Selection bar visibility is managed by updateSelectionBar()
+  // Hide team calendar if present
+  const tcw = document.getElementById('teamCalendarWrapper');
+  if (tcw) tcw.style.display = 'none';
+  // Show personal controls
+  document.querySelectorAll('.quota-section').forEach(el => el.style.display = '');
+
   const holidays = getHolidays(currentYear, currentState);
   const today = dateKey(new Date());
   const grid = document.getElementById('calendarGrid');
@@ -1990,6 +2261,309 @@ document.getElementById('importStart').addEventListener('click', async () => {
 
   setTimeout(() => importModal.classList.remove('active'), 1500);
   startBtn.disabled = false;
+});
+
+// ============================================================
+//  View Switching (Personal / Team)
+// ============================================================
+document.querySelectorAll('.view-tab').forEach(tab => {
+  tab.addEventListener('click', async () => {
+    const view = tab.dataset.view;
+    if (view === currentView) return;
+    currentView = view;
+    document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    if (view === 'team') {
+      await loadTeamCalendar();
+    } else {
+      teamData = null;
+      absences = await api('GET', '/api/absences?year=' + currentYear);
+      render();
+    }
+  });
+});
+
+async function loadTeamCalendar() {
+  try {
+    teamData = await api('GET', '/api/team/calendar?year=' + currentYear);
+    renderTeamCalendar();
+  } catch (e) {
+    // Fallback to personal view if team not found
+    currentView = 'personal';
+    document.querySelectorAll('.view-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.view === 'personal');
+    });
+    teamData = null;
+    absences = await api('GET', '/api/absences?year=' + currentYear);
+    render();
+  }
+}
+
+function renderTeamCalendar() {
+  // Hide personal calendar UI
+  document.getElementById('statsBar').style.display = 'none';
+  document.querySelector('.legend').style.display = 'none';
+  document.getElementById('holidayPanel').style.display = 'none';
+  document.querySelector('.calendar-container').style.display = 'none';
+  document.getElementById('selectionBar').classList.remove('visible');
+  // Hide quota/state controls
+  document.querySelectorAll('.quota-section').forEach(el => el.style.display = 'none');
+
+  document.getElementById('yearLabel').textContent = currentYear;
+
+  // Create or get team calendar wrapper
+  let wrapper = document.getElementById('teamCalendarWrapper');
+  if (!wrapper) {
+    wrapper = document.createElement('div');
+    wrapper.id = 'teamCalendarWrapper';
+    wrapper.className = 'team-calendar-wrapper';
+    document.querySelector('.calendar-container').parentNode.insertBefore(wrapper, document.querySelector('.calendar-container').nextSibling);
+  }
+  wrapper.style.display = '';
+
+  if (!teamData || !teamData.members || teamData.members.length === 0) {
+    wrapper.innerHTML = '<div class="team-no-members">Keine Teammitglieder im Team' +
+      (teamData ? ' "' + esc(teamData.teamName) + '"' : '') + '</div>';
+    return;
+  }
+
+  const members = teamData.members;
+  const year = teamData.year;
+
+  // Show team name in a summary bar
+  let html = '<div class="stats-bar" style="display:flex"><div class="stat-card"><div class="stat-label">Team</div><div class="stat-value" style="font-size:1.1rem">' +
+    esc(teamData.teamName) + '</div></div><div class="stat-card"><div class="stat-label">Mitglieder</div><div class="stat-value">' +
+    members.length + '</div></div></div>';
+
+  html += '<table class="team-table"><thead>';
+
+  // Row 1: Month headers (colspan = number of members)
+  html += '<tr><th class="team-day-num"></th>';
+  for (let m = 0; m < 12; m++) {
+    html += '<th class="team-month-header" colspan="' + members.length + '">' + MONTH_NAMES[m] + '</th>';
+  }
+  html += '</tr>';
+
+  // Row 2: Member names per month
+  html += '<tr><th class="team-day-num">Tag</th>';
+  for (let m = 0; m < 12; m++) {
+    for (const member of members) {
+      const shortName = (member.displayName || '').split(' ')[0] || '?';
+      html += '<th class="team-member-header" title="' + esc(member.displayName) + '">' + esc(shortName) + '</th>';
+    }
+  }
+  html += '</tr></thead><tbody>';
+
+  // Pre-compute holidays per member (different states)
+  const memberHolidays = members.map(m => getHolidays(year, m.state || 'BY'));
+
+  // Monthly sums per member
+  const monthSums = members.map(() => new Array(12).fill(0));
+
+  // 31 data rows
+  for (let d = 1; d <= 31; d++) {
+    html += '<tr><td class="team-day-num">' + d + '</td>';
+    for (let m = 0; m < 12; m++) {
+      const dim = daysInMonth(year, m);
+      for (let mi = 0; mi < members.length; mi++) {
+        if (d > dim) {
+          html += '<td class="team-cell empty"></td>';
+          continue;
+        }
+        const date = new Date(year, m, d);
+        const dow = date.getDay();
+        const key = dateKey(date);
+        const isWeekend = dow === 0 || dow === 6;
+        const holiday = memberHolidays[mi][key];
+        const absence = members[mi].absences[key];
+
+        let cls = 'team-cell';
+        let content = '';
+
+        if (isWeekend) {
+          cls += ' weekend';
+        } else if (holiday && holiday.value === 1) {
+          cls += ' holiday';
+          content = '<span class="tc-badge ft">FT</span>';
+        } else {
+          if (holiday && holiday.value === 0.5) {
+            content = '<span class="tc-badge ft">&frac12;</span>';
+          }
+          if (absence) {
+            const ac = absenceClass(absence);
+            const al = absenceLabel(absence);
+            content = '<span class="tc-badge ' + ac + '">' + al + '</span>';
+            // Count for sums
+            let val = absenceValue(absence);
+            if (holiday && holiday.value === 0.5 && (absence === 'UR' || absence === 'UR/2')) {
+              val = val * 0.5;
+            }
+            monthSums[mi][m] += val;
+          }
+        }
+
+        html += '<td class="' + cls + '">' + content + '</td>';
+      }
+    }
+    html += '</tr>';
+  }
+
+  // Summary row
+  html += '<tr class="team-summary-row"><td class="team-day-num" style="background:var(--surface2);font-weight:600">&#931;</td>';
+  for (let m = 0; m < 12; m++) {
+    for (let mi = 0; mi < members.length; mi++) {
+      const val = monthSums[mi][m];
+      html += '<td>' + (val > 0 ? formatNum(val) : '') + '</td>';
+    }
+  }
+  html += '</tr>';
+
+  html += '</tbody></table>';
+  wrapper.innerHTML = html;
+}
+
+// ============================================================
+//  Team Admin UI
+// ============================================================
+// Admin tab switching
+document.querySelectorAll('.admin-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.dataset.tab;
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('adminTab' + target.charAt(0).toUpperCase() + target.slice(1)).classList.add('active');
+    if (target === 'teams') loadTeams();
+  });
+});
+
+let allTeams = [];
+let allUsers = [];
+
+async function loadTeams() {
+  try {
+    allTeams = await api('GET', '/api/admin/teams');
+    allUsers = await api('GET', '/api/admin/users');
+    renderTeams();
+  } catch (e) {
+    document.getElementById('teamsContainer').innerHTML =
+      '<p style="color:#ef5350">Fehler beim Laden der Teams</p>';
+  }
+}
+
+function renderTeams() {
+  const container = document.getElementById('teamsContainer');
+  if (allTeams.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-muted);font-size:.85rem;margin-bottom:12px">Keine Teams vorhanden</p>';
+    return;
+  }
+
+  container.innerHTML = allTeams.map(team => {
+    const memberNames = team.members.map(m => '<span>' + esc(m.displayName || m.username) + '</span>').join('');
+    return `<div class="team-card" data-team-id="${team.id}">
+      <div class="team-card-header">
+        <span class="team-card-name">${esc(team.name)}</span>
+        <div class="team-card-actions">
+          <button onclick="editTeamMembers(${team.id})">Mitglieder</button>
+          <button class="danger" onclick="deleteTeam(${team.id}, '${esc(team.name)}')">L&ouml;schen</button>
+        </div>
+      </div>
+      <div class="team-members-list">${memberNames || '<em style="font-size:.75rem">Keine Mitglieder</em>'}</div>
+      <div class="team-member-edit" id="teamEdit${team.id}" style="display:none"></div>
+    </div>`;
+  }).join('');
+}
+
+function editTeamMembers(teamId) {
+  const editDiv = document.getElementById('teamEdit' + teamId);
+  if (editDiv.style.display !== 'none') {
+    editDiv.style.display = 'none';
+    return;
+  }
+
+  const team = allTeams.find(t => t.id === teamId);
+  const memberIds = new Set(team.members.map(m => m.id));
+
+  let html = '<form onsubmit="return saveTeamMembers(event, ' + teamId + ')">';
+  for (const u of allUsers) {
+    const checked = memberIds.has(u.id) ? ' checked' : '';
+    const otherTeam = u.teamId && u.teamId !== teamId ? ' <span class="team-hint">(Team: ' + esc(u.teamName || '?') + ')</span>' : '';
+    html += '<label><input type="checkbox" name="uid" value="' + u.id + '"' + checked + '>' +
+      esc(u.displayName || u.username) + otherTeam + '</label>';
+  }
+  html += '<div class="form-actions"><button type="submit" class="btn-primary" style="padding:5px 12px;font-size:.78rem">Speichern</button></div></form>';
+
+  editDiv.innerHTML = html;
+  editDiv.style.display = 'block';
+}
+
+async function saveTeamMembers(e, teamId) {
+  e.preventDefault();
+  const form = e.target;
+  const checked = form.querySelectorAll('input[name="uid"]:checked');
+  const userIds = Array.from(checked).map(cb => parseInt(cb.value, 10));
+
+  try {
+    await api('PUT', '/api/admin/teams/' + teamId + '/members', { userIds });
+    await loadTeams();
+    // Refresh current user info in case team membership changed
+    currentUser = await api('GET', '/api/me');
+    const viewTabs = document.getElementById('viewTabs');
+    if (currentUser.teamId) {
+      viewTabs.style.display = 'flex';
+    } else {
+      viewTabs.style.display = 'none';
+      if (currentView === 'team') {
+        currentView = 'personal';
+        document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('active', t.dataset.view === 'personal'));
+        absences = await api('GET', '/api/absences?year=' + currentYear);
+        render();
+      }
+    }
+  } catch (err) {
+    alert('Fehler: ' + err.message);
+  }
+  return false;
+}
+
+async function deleteTeam(id, name) {
+  if (!confirm('Team "' + name + '" wirklich l\u00f6schen? Mitglieder werden entkoppelt.')) return;
+  try {
+    await api('DELETE', '/api/admin/teams/' + id);
+    await loadTeams();
+    // Refresh current user info
+    currentUser = await api('GET', '/api/me');
+    const viewTabs = document.getElementById('viewTabs');
+    if (!currentUser.teamId) {
+      viewTabs.style.display = 'none';
+      if (currentView === 'team') {
+        currentView = 'personal';
+        document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('active', t.dataset.view === 'personal'));
+        absences = await api('GET', '/api/absences?year=' + currentYear);
+        render();
+      }
+    }
+  } catch (err) {
+    alert('Fehler: ' + err.message);
+  }
+}
+
+document.getElementById('createTeamForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  try {
+    await api('POST', '/api/admin/teams', {
+      name: document.getElementById('newTeamName').value.trim()
+    });
+    document.getElementById('newTeamName').value = '';
+    document.getElementById('createTeamDetails').removeAttribute('open');
+    await loadTeams();
+  } catch (err) {
+    alert('Fehler: ' + err.message);
+  } finally {
+    btn.disabled = false;
+  }
 });
 
 // ============================================================
