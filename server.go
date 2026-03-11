@@ -55,6 +55,7 @@ func initDB(path string) {
 			password_hash TEXT NOT NULL,
 			display_name TEXT NOT NULL,
 			state TEXT DEFAULT 'BY',
+			theme TEXT DEFAULT 'dark',
 			default_quota REAL DEFAULT 30,
 			is_admin INTEGER DEFAULT 0,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -90,6 +91,11 @@ func initDB(path string) {
 	_, err = db.Exec("ALTER TABLE users ADD COLUMN team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL")
 	if err != nil && !strings.Contains(err.Error(), "duplicate column") {
 		log.Printf("Note: ALTER TABLE users ADD COLUMN team_id: %v", err)
+	}
+
+	_, err = db.Exec("ALTER TABLE users ADD COLUMN theme TEXT DEFAULT 'dark'")
+	if err != nil && !strings.Contains(err.Error(), "duplicate column") {
+		log.Printf("Note: ALTER TABLE users ADD COLUMN theme: %v", err)
 	}
 
 	// Enable foreign keys
@@ -284,14 +290,14 @@ func handleLogout(w http.ResponseWriter, r *http.Request) {
 func handleMe(w http.ResponseWriter, r *http.Request) {
 	s := getSession(r)
 
-	var displayName, state string
+	var displayName, state, theme string
 	var defaultQuota float64
 	var isAdmin bool
 	var teamID sql.NullInt64
 	var teamName sql.NullString
-	err := db.QueryRow(`SELECT u.display_name, u.state, u.default_quota, u.is_admin, u.team_id, t.name
+	err := db.QueryRow(`SELECT u.display_name, u.state, u.theme, u.default_quota, u.is_admin, u.team_id, t.name
 		FROM users u LEFT JOIN teams t ON u.team_id = t.id WHERE u.id = ?`, s.UserID).
-		Scan(&displayName, &state, &defaultQuota, &isAdmin, &teamID, &teamName)
+		Scan(&displayName, &state, &theme, &defaultQuota, &isAdmin, &teamID, &teamName)
 	if err != nil {
 		jsonError(w, 500, "Benutzerdaten nicht gefunden")
 		return
@@ -301,6 +307,7 @@ func handleMe(w http.ResponseWriter, r *http.Request) {
 		"username":     s.Username,
 		"displayName":  displayName,
 		"state":        state,
+		"theme":        theme,
 		"defaultQuota": defaultQuota,
 		"isAdmin":      isAdmin,
 	}
@@ -475,6 +482,7 @@ func handlePutSettings(w http.ResponseWriter, r *http.Request) {
 
 	var req struct {
 		State        *string  `json:"state"`
+		Theme        *string  `json:"theme"`
 		DefaultQuota *float64 `json:"defaultQuota"`
 		DisplayName  *string  `json:"displayName"`
 	}
@@ -485,6 +493,14 @@ func handlePutSettings(w http.ResponseWriter, r *http.Request) {
 
 	if req.State != nil {
 		db.Exec("UPDATE users SET state = ? WHERE id = ?", *req.State, s.UserID)
+	}
+	if req.Theme != nil {
+		theme := strings.TrimSpace(*req.Theme)
+		if theme != "dark" && theme != "light" {
+			jsonError(w, 400, "Ungültiges Theme")
+			return
+		}
+		db.Exec("UPDATE users SET theme = ? WHERE id = ?", theme, s.UserID)
 	}
 	if req.DefaultQuota != nil {
 		db.Exec("UPDATE users SET default_quota = ? WHERE id = ?", *req.DefaultQuota, s.UserID)
