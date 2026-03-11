@@ -5,9 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Urlaubsplaner</title>
 <script>
+function getSystemTheme() {
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
 const savedTheme = localStorage.getItem('vacationplanner-theme');
 if (savedTheme === 'light' || savedTheme === 'dark') {
   document.documentElement.dataset.theme = savedTheme;
+} else {
+  document.documentElement.dataset.theme = getSystemTheme();
 }
 </script>
 <style>
@@ -1473,7 +1479,7 @@ let lastClickedDate = null;
 let currentUser = null; // { username, displayName, state, theme, defaultQuota, isAdmin, teamId?, teamName? }
 let currentView = 'personal'; // 'personal' or 'team'
 let teamData = null;
-let currentTheme = document.documentElement.dataset.theme || 'dark';
+let currentTheme = document.documentElement.dataset.theme || getSystemTheme();
 
 // ============================================================
 //  API helpers
@@ -1508,10 +1514,19 @@ function showApp() {
   document.getElementById('app').classList.add('visible');
 }
 
-function applyTheme(theme) {
+function applyTheme(theme, persist = true) {
   currentTheme = theme === 'light' ? 'light' : 'dark';
   document.documentElement.dataset.theme = currentTheme;
-  localStorage.setItem('vacationplanner-theme', currentTheme);
+  if (persist) {
+    localStorage.setItem('vacationplanner-theme', currentTheme);
+  }
+}
+
+function resolveTheme(userTheme) {
+  if (userTheme === 'light' || userTheme === 'dark') return { theme: userTheme, persist: true };
+  const savedTheme = localStorage.getItem('vacationplanner-theme');
+  if (savedTheme === 'light' || savedTheme === 'dark') return { theme: savedTheme, persist: true };
+  return { theme: getSystemTheme(), persist: false };
 }
 
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -1546,7 +1561,8 @@ async function initApp() {
   // Load user profile
   currentUser = await api('GET', '/api/me');
   currentState = currentUser.state || 'BY';
-  applyTheme(currentUser.theme || 'dark');
+  const resolvedTheme = resolveTheme(currentUser.theme);
+  applyTheme(resolvedTheme.theme, resolvedTheme.persist);
   defaultQuota = currentUser.defaultQuota || 30;
 
   document.getElementById('displayName').textContent = currentUser.displayName || currentUser.username;

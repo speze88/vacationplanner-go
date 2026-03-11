@@ -55,7 +55,7 @@ func initDB(path string) {
 			password_hash TEXT NOT NULL,
 			display_name TEXT NOT NULL,
 			state TEXT DEFAULT 'BY',
-			theme TEXT DEFAULT 'dark',
+			theme TEXT,
 			default_quota REAL DEFAULT 30,
 			is_admin INTEGER DEFAULT 0,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -93,7 +93,7 @@ func initDB(path string) {
 		log.Printf("Note: ALTER TABLE users ADD COLUMN team_id: %v", err)
 	}
 
-	_, err = db.Exec("ALTER TABLE users ADD COLUMN theme TEXT DEFAULT 'dark'")
+	_, err = db.Exec("ALTER TABLE users ADD COLUMN theme TEXT")
 	if err != nil && !strings.Contains(err.Error(), "duplicate column") {
 		log.Printf("Note: ALTER TABLE users ADD COLUMN theme: %v", err)
 	}
@@ -118,7 +118,7 @@ func seedAdminUser() {
 	}
 
 	_, err = db.Exec(
-		"INSERT INTO users (username, password_hash, display_name, state, default_quota, is_admin) VALUES (?, ?, ?, 'BY', 30, 1)",
+		"INSERT INTO users (username, password_hash, display_name, state, theme, default_quota, is_admin) VALUES (?, ?, ?, 'BY', NULL, 30, 1)",
 		username, string(hash), username,
 	)
 	if err != nil {
@@ -290,7 +290,8 @@ func handleLogout(w http.ResponseWriter, r *http.Request) {
 func handleMe(w http.ResponseWriter, r *http.Request) {
 	s := getSession(r)
 
-	var displayName, state, theme string
+	var displayName, state string
+	var theme sql.NullString
 	var defaultQuota float64
 	var isAdmin bool
 	var teamID sql.NullInt64
@@ -307,9 +308,13 @@ func handleMe(w http.ResponseWriter, r *http.Request) {
 		"username":     s.Username,
 		"displayName":  displayName,
 		"state":        state,
-		"theme":        theme,
 		"defaultQuota": defaultQuota,
 		"isAdmin":      isAdmin,
+	}
+	if theme.Valid {
+		resp["theme"] = theme.String
+	} else {
+		resp["theme"] = ""
 	}
 	if teamID.Valid {
 		resp["teamId"] = teamID.Int64
@@ -592,7 +597,7 @@ func handleAdminCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res, err := db.Exec(
-		"INSERT INTO users (username, password_hash, display_name, state, default_quota, is_admin) VALUES (?, ?, ?, ?, ?, ?)",
+		"INSERT INTO users (username, password_hash, display_name, state, theme, default_quota, is_admin) VALUES (?, ?, ?, ?, NULL, ?, ?)",
 		req.Username, string(hash), req.DisplayName, req.State, req.Quota, req.IsAdmin,
 	)
 	if err != nil {

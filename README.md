@@ -12,7 +12,7 @@ Webbasierte Urlaubsplanung mit interaktivem Jahreskalender, automatischer Feiert
 - **Multi-Select**: Mehrere Tage per Shift+Klick markieren und gleichzeitig bearbeiten
 - **ODS-Import**: Bestehende Daten aus LibreOffice Calc importieren
 - **Mehrbenutzersupport** mit Admin-Benutzerverwaltung
-- **Dark Theme**, responsive Design
+- **Theme-Auswahl** mit hellem und dunklem Layout, responsive Design
 - **Docker-Deployment** mit SQLite-Datenbank
 
 ## Schnellstart
@@ -70,6 +70,10 @@ Im Header das Feld "Kontingent (Tage)" ändern. Das Kontingent wird pro Jahr ges
 ### Bundesland ändern
 
 Im Header das gewünschte Bundesland auswählen — die Feiertage werden automatisch angepasst.
+
+### Theme auswählen
+
+Im Header unter **"Theme"** zwischen **"Dunkel"** und **"Hell"** wechseln. Die Auswahl wird pro Benutzer gespeichert; ohne gespeicherte Auswahl wird das System-Theme verwendet.
 
 ### ODS-Import
 
